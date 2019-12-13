@@ -1,11 +1,11 @@
 from django.db import models
-
-# Create your models here.
+from datetime import date
+from .validators import *
 
 
 class Gender(models.TextChoices):
-    male = 'Male'
-    female = 'Female'
+    male = 'male'
+    female = 'female'
 
 
 class Citizen(models.Model):
@@ -15,10 +15,10 @@ class Citizen(models.Model):
     building = models.CharField(max_length=256)
     apartment = models.PositiveIntegerField()
     name = models.CharField(max_length=256)
-    birth_date = models.DateField()
+    birth_date = models.DateField(validators=[validate_date])
     gender = models.CharField(choices=Gender.choices, max_length=6)
-    import_group = models.ForeignKey("Import", related_name="citizens", on_delete=models.CASCADE, blank=True)
-    relatives = models.ManyToManyField("self")
+    import_group = models.ForeignKey("Import", related_name="citizens", on_delete=models.CASCADE)
+    relatives = models.ManyToManyField("self", blank=True)
 
     def add_relatives(self, import_table, relatives):
         for relative in relatives:
@@ -36,6 +36,11 @@ class Citizen(models.Model):
 
     def get_relatives(self):
         return self.relatives.all()
+
+    def get_age(self):
+        today = date.today()
+        return today.year - self.birth_date.year -\
+               ((today.month, today.day) < (self.birth_date.month, self.birth_date.day))
 
     @staticmethod
     def get_citizen_by_import_id_citizen_id(import_id, citizen_id):

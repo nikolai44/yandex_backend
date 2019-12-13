@@ -19,8 +19,9 @@ from promotion.views import *
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('imports/', import_request),
+    path('imports/', post_import),
     path('imports/<int:import_id>/citizens/<int:citizen_id>', patch_citizen),
     path('imports/<int:import_id>/citizens', get_import),
     path('imports/<int:import_id>/citizens/birthdays', get_birthdays),
+    path('imports/<int:import_id>/towns/stat/percentile/age', get_percentile)
 ]
