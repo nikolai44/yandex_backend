@@ -22,4 +22,5 @@ urlpatterns = [
     path('imports/', import_request),
     path('imports/<int:import_id>/citizens/<int:citizen_id>', patch_citizen),
     path('imports/<int:import_id>/citizens', get_import),
+    path('imports/<int:import_id>/citizens/birthdays', get_birthdays),
 ]

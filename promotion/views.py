@@ -7,8 +7,6 @@ import time
 
 from .models import Citizen, Import
 
-# Create your views here.
-
 
 def import_validation(data):
 	return True
@@ -22,10 +20,10 @@ def import_request(request):
 		}
 	}
 	if request.method != 'POST':
-		return HttpResponse(status=400)
+		return HttpResponse("Импорт. Метод не 'POST", status=400)
 	data = json.loads(request.body)
 	if import_validation(data) is False:
-		return HttpResponse(status=400)
+		return HttpResponse("Валидация не пройдена", status=400)
 
 	i = Import.objects.create()
 	i.save()
@@ -44,13 +42,13 @@ def import_request(request):
 				birth_date=birth_date,
 				import_group=i,
 			)
-			c.relatives_add(i, citizen['relatives'])
+			c.add_relatives(i, citizen['relatives'])
 			c.save()
-		except Exception:
+		except ValueError:
 			for c in i.citizens.all():
 				c.delete()
 			i.delete()
-			return HttpResponse(status=400)
+			return HttpResponse("У одного из жителей неверная информация", status=400)
 	response["data"]["import_id"] = i.import_id
 	return JsonResponse(response, status=201)
 
@@ -67,7 +65,7 @@ def patch_citizen(request, import_id, citizen_id):
 			"name": None,
 			"birth_date": None,
 			"gender": None,
-			"relatives": None
+			"relatives": None,
 		}
 	}
 	if request.method != 'PATCH':
@@ -111,9 +109,45 @@ def patch_citizen(request, import_id, citizen_id):
 def get_import(request, import_id):
 	response = {
 		"data": [
-			{}
 		]
 	}
 	citizens = Import.get_citizens_by_import_id(import_id)
-	for citizen in citizens:
-		pass
+	for citizen_db in citizens:
+		citizen_json = dict()
+		citizen_json['citizen_id'] = citizen_db.citizen_id
+		citizen_json['town'] = citizen_db.town
+		citizen_json['street'] = citizen_db.street
+		citizen_json['building'] = citizen_db.building
+		citizen_json['apartment'] = citizen_db.apartment
+		citizen_json['name'] = citizen_db.name
+		citizen_json['birth_date'] = citizen_db.birth_date
+		citizen_json['gender'] = citizen_db.gender
+		citizen_json['relatives'] = list(c.citizen_id for c in citizen_db.get_relatives())
+		response['data'].append(citizen_json)
+	return JsonResponse(response, status=200)
+
+
+def get_birthdays(request, import_id):
+	response = {
+		"data": {
+			"1":  [],
+			"2":  [],
+			"3":  [],
+			"4":  [],
+			"5":  [],
+			"6":  [],
+			"7":  [],
+			"8":  [],
+			"9":  [],
+			"10": [],
+			"11": [],
+			"12": [],
+		}
+	}
+	citizens = Import.get_citizens_by_import_id(import_id)
+	birthdays = dict()
+	for citizen_db in citizens:
+		birthdays[citizen_db.citizen_id] = [0] * 12
+		for relative in citizen_db.get_relatives():
+			birthdays[citizen_db.citizen_id][relative.birth_date.month - 1] += 1
+	print(birthdays)	return JsonResponse(response, status=200)
